@@ -198,6 +198,9 @@ if __name__ == "__main__":
         pg.display.flip()
         reloj.tick(10)
 
+
     motor.print_state_table()   # *** Test ***
     motor.print_event_dict()    # *** Test ***
+    print(motor.get_inputs_event_dict())
+    print(motor.get_outputs_event_dict())
     pg.quit()

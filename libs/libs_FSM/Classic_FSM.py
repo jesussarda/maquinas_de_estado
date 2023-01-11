@@ -373,6 +373,36 @@ class FSM():
 
     # -------------------------------------------------------------------------------------------
 
+    def get_inputs_event_dict(self):
+        """
+            Obtiene los eventos de entrada del diccionario de eventos creado
+
+        :return:
+        """
+        if self.event_dict:
+            return self.event_dict['inputs']
+        else:
+            print(
+                f'\n\tERROR: <get_event_dict> El diccionario de eventos no ha sido creado aún.')
+            exit()
+
+    # -------------------------------------------------------------------------------------------
+
+    def get_outputs_event_dict(self):
+        """
+            Obtiene los eventos de salida del diccionario de eventos creado
+
+        :return:
+        """
+        if self.event_dict:
+            return self.event_dict['outputs']
+        else:
+            print(
+                f'\n\tERROR: <get_event_dict> El diccionario de eventos no ha sido creado aún.')
+            exit()
+
+    # -------------------------------------------------------------------------------------------
+
     def set_event_dict(self, event_dict):
         self.event_dict = event_dict
 
