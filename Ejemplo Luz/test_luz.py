@@ -36,40 +36,52 @@ BG_COLOR = (64,128,128)
 
 state_table = {
     'S0':  [
-        {'key': '00', 'next_st': 'S0',  'action': 'apaga' },
-        {'key': '01', 'next_st': 'S1',  'action': 'apaga' },
-        {'key': '10', 'next_st': 'S1',  'action': 'apaga' },
-        {'key': '11', 'next_st': 'S0',  'action': 'apaga' }],
+        {'key': '00', 'next_st': 'S0',  'action': '0' },
+        {'key': '01', 'next_st': 'S1',  'action': '0' },
+        {'key': '10', 'next_st': 'S1',  'action': '0' },
+        {'key': '11', 'next_st': 'S0',  'action': '0' }],
 
     'S1': [
-        {'key': '00', 'next_st': 'S3', 'action':'prende'},
-        {'key': '01', 'next_st': 'S1', 'action':'prende'},
-        {'key': '10', 'next_st': 'S1', 'action':'prende'},
-        {'key': '11', 'next_st': 'S2', 'action':'prende'}],
+        {'key': '00', 'next_st': 'S3', 'action':'1'},
+        {'key': '01', 'next_st': 'S1', 'action':'1'},
+        {'key': '10', 'next_st': 'S1', 'action':'1'},
+        {'key': '11', 'next_st': 'S2', 'action':'1'}],
 
     'S2': [
-        {'key': '00', 'next_st': 'S2', 'action': 'apaga'},
-        {'key': '01', 'next_st': 'S4', 'action': 'apaga'},
-        {'key': '10', 'next_st': 'S4', 'action': 'apaga'},
-        {'key': '11', 'next_st': 'S2', 'action': 'apaga'}],
+        {'key': '00', 'next_st': 'S2', 'action': '0'},
+        {'key': '01', 'next_st': 'S4', 'action': '0'},
+        {'key': '10', 'next_st': 'S4', 'action': '0'},
+        {'key': '11', 'next_st': 'S2', 'action': '0'}],
 
     'S3': [
-        {'key': '00', 'next_st': 'S3', 'action': 'prende'},
-        {'key': '01', 'next_st': 'S4', 'action': 'prende'},
-        {'key': '10', 'next_st': 'S4', 'action': 'prende'},
-        {'key': '11', 'next_st': 'S3', 'action': 'prende'}],
+        {'key': '00', 'next_st': 'S3', 'action': '1'},
+        {'key': '01', 'next_st': 'S4', 'action': '1'},
+        {'key': '10', 'next_st': 'S4', 'action': '1'},
+        {'key': '11', 'next_st': 'S3', 'action': '1'}],
 
     'S4': [
-        {'key': '00', 'next_st': 'S0', 'action': 'apaga'},
-        {'key': '01', 'next_st': 'S4', 'action': 'apaga'},
-        {'key': '10', 'next_st': 'S4', 'action': 'apaga'},
-        {'key': '11', 'next_st': 'S5', 'action': 'apaga'}],
+        {'key': '00', 'next_st': 'S0', 'action': '0'},
+        {'key': '01', 'next_st': 'S4', 'action': '0'},
+        {'key': '10', 'next_st': 'S4', 'action': '0'},
+        {'key': '11', 'next_st': 'S5', 'action': '0'}],
 
     'S5': [
-        {'key': '00', 'next_st': 'S5', 'action': 'prende'},
-        {'key': '01', 'next_st': 'S1', 'action': 'prende'},
-        {'key': '10', 'next_st': 'S1', 'action': 'prende'},
-        {'key': '11', 'next_st': 'S5', 'action': 'prende'}]
+        {'key': '00', 'next_st': 'S5', 'action': '1'},
+        {'key': '01', 'next_st': 'S1', 'action': '1'},
+        {'key': '10', 'next_st': 'S1', 'action': '1'},
+        {'key': '11', 'next_st': 'S5', 'action': '1'}]
+}
+
+# ---------------------------------------------------------------------------------------------
+# Identificadores de eventos de entrada y salida:
+
+#   NOTA:
+#       El orden de los identificadores en las listaa son importantes. Debe corresponder con
+#       cada dígito binario la clave <key> de la tabla de estados
+
+key_id_dict = {
+    'inputs': ['sw_p1','sw_p2'],
+    'outputs': ['luz']
 }
 
 # =============================================================================================
@@ -86,43 +98,52 @@ if __name__ == "__main__":
     reloj = pg.time.Clock()
 
     if test:
-        light = Luz(screen,  state_table)
+        light = Luz(screen,  state_table, key_id_dict)
         print('\n\tPrueba con tabla de estados externa.')
+
+        light.ID = 'Proyecto Luces Pasillo'
     else:
-        light = Luz(screen)     # crea máquina de estados
+        light = Luz(screen, event_id_dict = key_id_dict)     # crea máquina de estados
         print('\n\tPrueba con tabla de estados añadida.')
 
-        action_dict = light.get_action_dict()
+        light.ID = 'Proyecto Luces Pasillo'
 
-        light.add_state('S0', '00', 'S0', action_dict['apaga'])
-        light.add_state('S0', '01', 'S1', action_dict['apaga'])
-        light.add_state('S0', '10', 'S1', action_dict['apaga'])
-        light.add_state('S0', '11', 'S0', action_dict['apaga'])
+#        action_dict = light.get_action_dict()
 
-        light.add_state('S1', '00', 'S3', action_dict['prende'])
-        light.add_state('S1', '01', 'S1', action_dict['prende'])
-        light.add_state('S1', '10', 'S1', action_dict['prende'])
-        light.add_state('S1', '11', 'S2', action_dict['prende'])
+        # Tabla de estados.
 
-        light.add_state('S2', '00', 'S2', action_dict['apaga'])
-        light.add_state('S2', '01', 'S4', action_dict['apaga'])
-        light.add_state('S2', '10', 'S4', action_dict['apaga'])
-        light.add_state('S2', '11', 'S2', action_dict['apaga'])
+        light.add_state('S0', '00', 'S0', '0')
+        light.add_state('S0', '01', 'S1', '0')
+        light.add_state('S0', '10', 'S1', '0')
+        light.add_state('S0', '11', 'S0', '0')
 
-        light.add_state('S3', '00', 'S3', action_dict['prende'])
-        light.add_state('S3', '01', 'S4', action_dict['prende'])
-        light.add_state('S3', '10', 'S4', action_dict['prende'])
-        light.add_state('S3', '11', 'S3', action_dict['prende'])
+        light.add_state('S1', '00', 'S3', '1')
+        light.add_state('S1', '01', 'S1', '1')
+        light.add_state('S1', '10', 'S1', '1')
+        light.add_state('S1', '11', 'S2', '1')
 
-        light.add_state('S4', '00', 'S0', action_dict['apaga'])
-        light.add_state('S4', '01', 'S4', action_dict['apaga'])
-        light.add_state('S4', '10', 'S4', action_dict['apaga'])
-        light.add_state('S4', '11', 'S5', action_dict['apaga'])
+        light.add_state('S2', '00', 'S2', '0')
+        light.add_state('S2', '01', 'S4', '0')
+        light.add_state('S2', '10', 'S4', '0')
+        light.add_state('S2', '11', 'S2', '0')
 
-        light.add_state('S5', '00', 'S5', action_dict['prende'])
-        light.add_state('S5', '01', 'S1', action_dict['prende'])
-        light.add_state('S5', '10', 'S1', action_dict['prende'])
-        light.add_state('S5', '11', 'S5', action_dict['prende'])
+        light.add_state('S3', '00', 'S3', '1')
+        light.add_state('S3', '01', 'S4', '1')
+        light.add_state('S3', '10', 'S4', '1')
+        light.add_state('S3', '11', 'S3', '1')
+
+        light.add_state('S4', '00', 'S0', '0')
+        light.add_state('S4', '01', 'S4', '0')
+        light.add_state('S4', '10', 'S4', '0')
+        light.add_state('S4', '11', 'S5', '0')
+
+        light.add_state('S5', '00', 'S5', '1')
+        light.add_state('S5', '01', 'S1', '1')
+        light.add_state('S5', '10', 'S1', '1')
+        light.add_state('S5', '11', 'S5', '1')
+
+        state_table = light.get_state_table()
+        light.validate_table(state_table)
 
     done = False
     while not done:
@@ -150,5 +171,5 @@ if __name__ == "__main__":
     # ------------------------------------------
     # Fin de la simulación
 
-    light.print_state_dict()   # *** Test ***
+    light.print_state_table()   # *** Test ***
     pg.quit()

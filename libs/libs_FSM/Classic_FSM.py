@@ -32,15 +32,15 @@
 
     NOta:
         El diccionario es case insensitive para las  etiquetas
-        Todas la etiquetas deben estar en letra minúscula. Si alguna etiqueta contiene mayusculas se convierte
+        Todas la etiquetas deben estar en letra minúscula. Si alguna etiqueta contiene mayúsculas se convierte
         internamente a minúsculas.
 
 ==================================================================================================================
 
     Ejemplo:
                                                               s
-        Para Los estados definidos con los identificadores 'inicio', 'edo_1', 'fin'
-                                                                      }
+        Para Los estados definidos con los identificadores 'inicio', 'edo_1', 'fin',
+
         dic_Estados = { 'inicio': [
 
                                 {'key':     '0102',
@@ -75,66 +75,64 @@
 
 class FSM():
 
-    name ='Finite State Machine'
+    ID ='FSM'
                                                      
     # -------------------------------------------------------------------------------------------
 
-    def __init__(self, Inicial_state, state_table = None, action_dict = None):
+    def __init__(self, inicial_state, state_table = None, event_id_dict = None):
         """
            Establece las condiciones iniciales de la Máquina de Estado.
 
-        :param Inicial_state:   Estado inicial para la secuencia de transiciones de estados.
+        :param inicial_state:   Estado inicial para la secuencia de transiciones de estados.
         :param state_table:     Diccionario con la secuencia de transiciones de estados
         :param action_dict:     Diccionario con la colección de rutinas de acción que cumple un evento.
         """
 
-        if state_table and action_dict:
-            valid_state_dict = self.validate_table(state_table, action_dict)
-            self.state_table = valid_state_dict # tabla de estados prediseñada validada
-        else:
-            self.state_table = {}               # tabla de estados vacía.
-                                                # Se debe crear usando <add_state>
+        self.event_dict= self.validate_event_id_dict(event_id_dict)
 
-        self.inicial_state =    Inicial_state   # estado de comienzo
-        self.actual_state =     Inicial_state   # estado actual (varía según la tabla de estados
-        self.sw_stop =          False
+        if state_table:
+            self.state_table = self.validate_table(state_table)
+        else:
+            self.state_table = {}                       # tabla de estados vacía.
+                                                        # Se debe crear usando <add_state>
+        self.inicial_state =    inicial_state.lower()   # estado de comienzo
+        self.actual_state =     self.inicial_state      # estado actual (varía según la tabla de estados
 
     # -------------------------------------------------------------------------------------------
 
-    def validate_table(self, state_table, action_dict):
-        """
-            Válida la consistencia de la estructura de la tabla de estados y convierte los identificadores
-            de acción en la función o el método, que debe haber sido creado previamente.
+    def validate_event_id_dict(self, event_id_dict):
 
-        :param state_table:
-        :return:    None Si hay inconsistencias, o, La tabla con el ajuste de las acciones
-        """
+        event_dict = {}
+        if event_id_dict:
+            input_event_list = event_id_dict['inputs']
+            if input_event_list:
+                event_dict['inputs'] ={}
+                for input in input_event_list:
+                    event_dict['inputs'][str(input)] = False
+            else:
+                print(
+                    f'\n\tERROR: <create_event_dict> La lista de id de eventos de entrada está vacía.')
+                exit()
 
-        state_table = self.validate_consistency(state_table, action_dict)
-        if state_table:
-            for state in state_table.keys():
-                event_list = state_table[state]
-                if event_list:
-                    for idx, event_dict in enumerate(event_list):
-                        function = self.validate_event_dict(state, event_dict, action_dict)
-                        if function:
-                            state_table[state][idx]['action'] = function
-                        else:
-                            print(
-                                f'\n\tERROR: <validate_table> No existe una función de acción válida para el evento <{event_dict["key"]}> del estado <{state}>')
-                            exit()
-                else:
-                    print(f'\n\tERROR: <validate_table> El estado <{state}> no contiene condiciones o eventos')
-                    exit()
+            output_event_list = event_id_dict['outputs']
+            if output_event_list:
+                event_dict['outputs'] ={}
+                for output in output_event_list:
+                    event_dict['outputs'][str(output)] = False  # crea evento y lo inicia en False
+            else:
+                print(
+                    f'\n\tERROR: <create_event_dict> La lista de id de eventos de salida está vacía.')
+                exit()
         else:
-            print(f'\n\tERROR: <validate_table> La tabla no ha sido creada')
+            print(
+                f'\n\tERROR: <create_event_dict> El diccionario de id de eventos está vacío>')
             exit()
 
-        return state_table
+        return event_dict
 
     # -------------------------------------------------------------------------------------------
 
-    def validate_consistency(self,state_table, action_dict):
+    def validate_table(self,state_table):
         """
             Valida que las etiquetas de estado sea la misma que en el estado siguiente, independientemente
             de el case.
@@ -144,17 +142,47 @@ class FSM():
         """
 
         if state_table:                         # si no está vacio
+
+            state_table = {key.lower(): value for key, value in state_table.items()}    # pone los id de estado en minusculas
             state_list = state_table.keys()
-            action_list = action_dict.keys()
-            for state in state_list:
+            for num, state in enumerate(state_list):
                 event_list = state_table[state]
                 if event_list:
-                    for idx, event_dict in enumerate(event_list):
-                        if state.lower() == event_dict['next_st'].lower():
-                            state_table[state][idx]['next_st'] = state
-                        for action in action_list:
-                            if event_dict['action'].lower() == action.lower():
-                                state_table[state][idx]['action'] = action
+                     for idx, event_dict  in enumerate(event_list):
+                        if isinstance(event_dict['key'], str) and event_dict['key'].isnumeric():
+                            value_list = list(event_dict['key'])
+                            for value in value_list:
+                                if int(value) > 1:
+                                    print(
+                                        f'\n\tERROR: <validate_consistency> El dígito <{value}> del identificador de evento <{event_dict["key"]}> de La condición <{idx+1}> del estado <{state}> debe ser binario')
+                                    exit()
+                        else:
+                            print(
+                                f'\n\tERROR: <validate_consistency> El identificador de evento <{event_dict["key"]}> de la condición <{idx+1}> del estado <{state}> no es un string o no es numérico')
+                            exit()
+                        # -----------------------------------------------------------------------------------
+
+                        if  event_dict['next_st'].lower() not in state_list:
+                            print(
+                                f'\n\tERROR: <validate_consistency> El identificador de estado de transición <{event_dict["next_st"]}> no corresponde con ningún estado de la tabla')
+                            exit()
+                        else:
+                            event_dict['next_st'] = event_dict['next_st'].lower()
+
+                        # -----------------------------------------------------------------------------------
+
+                        if event_dict['action'].isnumeric():
+                            value_list = list(event_dict['action'])
+                            for value in value_list:
+                                if int(value) > 1:
+                                    print(
+                                        f'\n\tERROR: <validate_consistency> El dígito <{value}> del identificador de acción <{event_dict["action"]}> de La condición <{idx+1}> del estado <{state}> debe ser binario')
+                                    exit()
+                        else:
+                            print(
+                                f'\n\tERROR: <validate_consistency> El identificador de acción <{event_dict["action"]}> de la condición <{idx+1}> del estado <{state}> no es numérico')
+                            exit()
+
                 else:
                     print(f'\n\tERROR: <validate_consistency> El estado <{state}> no contiene condiciones o eventos')
                     exit()
@@ -165,68 +193,6 @@ class FSM():
 
         return state_table
 
-    # -------------------------------------------------------------------------------------------
-
-    def validate_event_dict(self, state, event_dict, action_dict):
-        """
-            Valida estructura de u diccionario de evento <event_dict> de un estado <state> específico.
-
-        :param state:       Id de estado ql que pertenec el evento.
-        :param event_dict:  Diccionario de un evento del estado <state> a validar.
-                            Claves: 'key', 'next_st' y 'action'
-        :param action_dict: Diccionario con el grupo de funciones o métodos de acción para la
-                            condición o evento, si se da la condición en <key>
-
-        :return: action_method  Función correspondiente (ejecutable)
-
-        """
-
-        action_method = None
-        if event_dict and action_dict:
-
-            # -------------------------------------------------------------------------------------------------------
-            # se validan las entradas:
-            # El id de estado debe ser un un string. Otro tipo no es valido.
-
-            if not isinstance(state, str):
-                print(
-                    f'\n\tERROR: El identificador de estado <{state}> debe ser alfanumérico.')
-                exit()
-
-            # El id de condición debe ser un un string. Otro tipo no es válido.
-
-            if not isinstance(event_dict['key'], str):
-                print(
-                    f'\n\tERROR: El identificador en condición o evento <{event_dict["key"]}> del estado <{state}> debe ser alfanumérico.')
-                exit()
-
-            # El id de condición debe ser un un strsing. Otro tipo no es válido.
-
-            if not isinstance(event_dict['next_st'], str):
-                print(
-                    f'\n\tERROR: El identificador de estado siguente <{event_dict["next_st"]}> para la condición <{event_dict["key"]}> del estado <{state}> debe ser alfanumérico.')
-                exit()
-
-            # El id de accion deb esr un string.
-
-            if not isinstance(event_dict['action'], str):
-                print(
-                    f'\n\tERROR: El identificador de acción <{event_dict["action"]}> para la condición <{event_dict["key"]}> del estado <{state}> debe ser alfanumérico.')
-                exit()
-            else:
-                action = event_dict["action"]
-                if action in action_dict.keys():
-                    action_method = action_dict[action]
-                else:
-                    print(
-                        f'\n\tERROR: El método <{event_dict["action"]}> para la condición <{event_dict["key"]}> del estado <{state}> no ha sido creado.')
-                    exit()
-        else:
-            print(
-                f'\n\tERROR: <validate_event_dict> El diccionario de eventos y/o de acciones no existe.')
-            exit()
-
-        return action_method
 
     # -------------------------------------------------------------------------------------------
 
@@ -254,13 +220,35 @@ class FSM():
             for self.event_key in self.state_table[self.actual_state]:
                 if self.event_key['key'] == key:
                     if self.event_key['action'] != None:
-                        self.event_key['action']()
+                        self.event_dict = self.update_action(self.event_key['action'])
                     self.actual_state = self.event_key['next_st']
         else:
             print(
                 f'\n\tERROR: <step> La tabla de transición de estados no existe. Debe crearla antes.')
             exit()
 
+        return self.event_dict
+
+    # -------------------------------------------------------------------------------------------
+
+    def update_action(self, action_key):
+        """
+
+        :param action_key:
+        :return:
+        """
+
+        if action_key and isinstance(action_key, str):
+            output_key_dict = self.event_dict['outputs']
+            for idx, key in enumerate(output_key_dict.keys()):
+                temp = action_key[idx]
+                self.event_dict['outputs'][key] = bool(int(action_key[idx]))
+        else:
+            print(
+                f'\n\tERROR: <update_action> El identificador de acción no existe o no es alfanumérico.')
+            exit()
+
+        return self.event_dict
 
     # -------------------------------------------------------------------------------------------
 
@@ -285,15 +273,30 @@ class FSM():
         # se validan las entradas:
         # El id de estado debe ser un un string. Otro tipo no es valido.
 
+
         if not isinstance(state, str):
             print(f'\n\tERROR: El identificador de estado <{state}> debe ser alfanumérico.')
             exit()
+        else:
+            state = state.lower()
 
         # El id de condición debe ser un un string. Otro tipo no es válido.
 
         if not isinstance(key, str):
             print(f'\n\tERROR: El identificador en condición o evento <{key}> del estado <{state}> debe ser alfanumérico.')
             exit()
+        else:
+            if not key.isnumeric():
+                print(
+                    f'\n\tERROR: El identificador en condición o evento <{key}> del estado <{state}> debe ser un nomero binario.')
+                exit()
+            else:
+                digit_lst = list(key)
+                for digit in digit_lst:
+                    if int(digit) > 2:
+                        print(
+                            f'\n\tERROR: El digito <{digit}> del identificador en condición o evento <{key}> del estado <{state}> debe ser  binario.')
+                        exit()
 
         # El id de condición debe ser un un string. Otro tipo no es .
 
@@ -301,13 +304,31 @@ class FSM():
             print(f'\n\tERROR: El identificador de estado siguente <{next_state}> para la condicion <{key}> del estado <{state}> debe ser alfanumérico.')
             exit()
 
+        # El id de accion debe ser un un string. Otro tipo no es .
+
+        if not isinstance(action, str):
+            print(f'\n\tERROR: El identificador de accion <{action}> para la condicion <{key}> del estado <{state}> debe ser alfanumérico.')
+            exit()
+        else:
+            if not action.isnumeric():
+                print(
+                    f'\n\tERROR: El identificador de accion <{action}> del estado <{state}> debe ser un nomero binario.')
+                exit()
+            else:
+                digit_lst = list(action)
+                for digit in digit_lst:
+                    if int(digit) > 2:
+                        print(
+                            f'\n\tERROR: El digito <{digit}> del identificador de acción <{action}> del estado <{state}> debe ser  binario.')
+                        exit()
+
         # -------------------------------------------------------------------------------------------------------
         # Si el id de estado ya ha sido creado y está en el diccionario de estados, se crea y añade el
         # diccionario de esa nueva condición a la lista de condiciones de ese estado
 
         event_item = {
             'key': key,
-            'next_st': next_state,
+            'next_st': next_state.lower(),
             'action': action
         }
 
@@ -322,28 +343,7 @@ class FSM():
 
     # -------------------------------------------------------------------------------------------
 
-    def execute_action(self, state, key):
-        """
-            Se ejecuta la rutina asociada a una acción de la lista de estados.
-
-        :param state:   estado a la que corresponde la acción
-        :param key:     Condición (tecla) asociado a este estado
-        :return:
-        """
-
-        key_lst = list(self.state_table.keys())
-        if state in key_lst:
-            for event_key in self.state_table[state]:
-                if event_key['key']  ==  key:
-                    if event_key['action'] != None:
-                        event_key['action']()
-                else:
-                    print(f'\n\tERROR: El identificador de condición o evento <{key}> no es válido.')
-                    exit()
-
-    # -------------------------------------------------------------------------------------------
-
-    def get_state_dict(self):
+    def get_state_table(self):
         """
             Obtiene el diccionario de estados creado
 
@@ -351,16 +351,63 @@ class FSM():
         """
         if self.state_table:
             return self.state_table
+        else:
+            print(
+                f'\n\tERROR: <get_state_table> la tabla de estados no ha sido creada aún.')
+            exit()
 
     # -------------------------------------------------------------------------------------------
 
-    def print_state_dict(self):
+    def get_event_dict(self):
         """
-            Imprime el contenido de la lista de estados creda
+            Obtiene el diccionario de estados creado
+
         :return:
+        """
+        if self.event_dict:
+            return self.event_dict
+        else:
+            print(
+                f'\n\tERROR: <get_event_dict> El diccionario de eventos no ha sido creado aún.')
+            exit()
+
+    # -------------------------------------------------------------------------------------------
+
+    def set_event_dict(self, event_dict):
+        self.event_dict = event_dict
+
+    # -------------------------------------------------------------------------------------------
+
+    def gets_coded_events(self, in_event_dict=None):
+        """
+
+        :param event_dict:
+        :return:
+        """
+        if in_event_dict:
+             self.event_dict['inputs'] = in_event_dict
+
+        code = ''
+        for key, value in in_event_dict.items():
+            code += str(int(value))
+        return code
+
+    # -------------------------------------------------------------------------------------------
+
+    def print_state_table(self):
+        """
+            Imprime el contenido de la lista de estados creada
+
+        :return:    None
         """
 
         if self.state_table:
+
+            print('\n')
+            print('=' * 80)
+            print('\t\tTABLA DE ESTADOS')
+            print('=' * 80)
+            print(f'INSTANCIA:\t\t{self.ID}\t\tESTADO INICIAL: {self.inicial_state}')
             for state in self.state_table.keys():
                 print('-' * 80)
                 print('ESTADO: ',state)
@@ -369,6 +416,34 @@ class FSM():
                     print(f'\t{event_dict}')
             print('-'*80)
         else:
-            print('\n\tERROR: La tabla de estados está vacía')
+            print('\n\tERROR: <print_state_table> La tabla de estados está vacía')
             exit()
+
+    # -------------------------------------------------------------------------------------------
+
+    def print_event_dict(self):
+        """
+            Imprime estructura y el contenido del diccionario de eventos
+
+        :return:    None
+        """
+
+        if self.event_dict:
+            print('\n')
+            print('=' * 80)
+            print('\t\tDICCIONARIO DE EVENTOS')
+            print('=' * 80)
+            print(f'INSTANCIA:\t\t{self.ID}\t\tESTADO INICIAL: {self.inicial_state}')
+            for key, list in self.event_dict.items():
+                print('-' * 80)
+                print(f'{key.upper()}: ')
+                print('-' * 80)
+                for item, value in list.items():
+                    print(f'\t{item}:\t{int(value)}')
+            print('-'*80)
+
+        else:
+            print('\n\tERROR: <print_event_dict> El diccionario de eventos np ha sido creado')
+            exit()
+
 

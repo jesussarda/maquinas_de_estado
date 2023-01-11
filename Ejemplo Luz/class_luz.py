@@ -63,83 +63,82 @@ class Luz(FSM):
 
     # -------------------------------------------------------------------------------------------
 
-    def __init__(self, screen, state_table = None):
+    def __init__(self, screen, state_table = None, event_id_dict= None):
         """
 
         :param screen:
         """
 
         # ===================================================================================
-        # Diccionario de funciones o métodos de acción
-
-        self.accion_dict = {
-            'prende': self.prende,
-            'apaga':   self.apaga
-            }
-
-        # ===================================================================================
 
 
         if state_table:
-            super().__init__('S0', state_table, self.accion_dict)
+            super().__init__('S0', state_table, event_id_dict)
         else:
-            super().__init__('S0')
+            super().__init__('S0',  event_id_dict = event_id_dict)
 
         self.screen =       screen
+
+        self.sw_P1 = False      # entrada
+        self.sw_P2 = False      # entrada
+
+        self.sw_luz = False     # salida
 
         self.txt_P1 = Text( FontSize= 20)
         self.txt_P2 = Text( FontSize= 20)
 
-        self.sw_luz = False
-        self.sw_P1 =  False
-        self.sw_P2 =  False
+    # ----------------------------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------------------------
-
-    def new_state(self, id_st, id_event, id_next_st, id_action):
+    def get_push_button_state(self, event):
         """
-           Añade un estado y una condición (evento) para ese estado
+            Detecta actividad del botón de start del motor (tecla <s> del teclado)
 
-        :param id_st:       Identificador del estado
-        :param id_event:    Identificador del evento
-        :param id_next_st:  Identificador del estado siguiente si se da el evento
-        :param id_action:   identificdor o apuntador a la función de accion si se d el evento
-        :return:    None
-
-        """
-        if isinstance(id_action, str):
-            self.add_state(id_st, id_event, id_next_st, self.accion_dict[id_action])
-#            self.machine.add_state(id_st, id_event, id_next_st, self.accion_dict[id_action])
-        else:
-            self.add_state(id_st, id_event, id_next_st, id_action)
-#            self.machine.add_state(id_st, id_event, id_next_st, id_action)
-        pass
-
-    # -------------------------------------------------------------------------------------------
-
-    def get_action_dict(self):
-        """
-            Se obtiene la lista de funciones definidas
+        :param event:
         :return:
         """
-        return self.accion_dict
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_s:
+                self.sw_P1 = True
+            if event.key == pg.K_d:
+                self.sw_P2 = True
+
+        elif event.type == pg.KEYUP:
+            if event.key == pg.K_s:
+                self.sw_P1 = False
+            if event.key == pg.K_d:
+                self.sw_P2 = False
 
     # -------------------------------------------------------------------------------------------
     #   A C C I O N E S
 
-    def prende(self):
+    def set_action(self, out_event_dict):
         """
-            Prende la luz.
-         :return:
-        """
-        self.sw_luz = True
+            activa o para giro del motor, prende o apaga luz de alarma
 
-    def apaga(self):
-        """
-            Apaga la luz
+        :param event_dict:
         :return:
         """
-        self.sw_luz = False
+
+        for key, value in out_event_dict.items():
+            self.sw_luz = value
+        self.sw_luz = out_event_dict['luz']
+        # ----------------------------------------------------------------------------------------------
+
+    def simulation_step(self):
+        """
+            Ejecuta un paso de la máquina de estados adquiriendo el código
+            de evento co condición.
+
+        :return: ninguno
+        """
+
+        event_dict = self.get_event_dict()
+        in_event_dict = event_dict['inputs']
+        in_event_dict['sw_p1'] = int(self.sw_P1)
+        in_event_dict['sw_p2'] = int(self.sw_P2)
+
+        self.event_dict = self.step(self.gets_coded_events(in_event_dict))
+        self.set_action(self.event_dict['outputs'])
 
     # ----------------------------------------------------------------------------------------------
     #   D I B U J O S
@@ -172,49 +171,5 @@ class Luz(FSM):
         else:
             pg.draw.rect(self.screen, LED_P2_OFF, RECT_P2)
             # pg.draw.circle(self.screen,LED_P2_OFF, POS_LED_P2, RADIO_PULS)
-
-    # ----------------------------------------------------------------------------------------------
-
-    def get_coded_events(self):
-        """
-            Obtiene el código numérico del estado de los eventos start y sensor
-
-        :return: Texto con Código numérico correspondiente al estado de los eventos
-        """
-        code ='{0}{1}'.format(int(self.sw_P1), int(self.sw_P2))
-        return code
-
-    # ----------------------------------------------------------------------------------------------
-
-    def get_push_button_state(self, event):
-        """
-            Detecta actividad del botón de start del motor (tecla <s> del teclado)
-
-        :param event:
-        :return:
-        """
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_s:
-                self.sw_P1 = True
-            if event.key == pg.K_d:
-                self.sw_P2 = True
-
-        elif event.type == pg.KEYUP:
-            if event.key == pg.K_s:
-                self.sw_P1 = False
-            if event.key == pg.K_d:
-                self.sw_P2 = False
-
-    # ----------------------------------------------------------------------------------------------
-
-    def simulation_step(self):
-        """
-            Ejecuta un paso de la máquina de estados adquiriendo el código
-            de evento co condición.
-
-        :return: ninguno
-        """
-
-        self.step(self.get_coded_events())
 
 
