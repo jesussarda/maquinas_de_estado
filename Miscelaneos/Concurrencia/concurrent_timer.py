@@ -86,7 +86,7 @@ if __name__ == "__main__":
     #   pasa un parámetro
 
     def Funcion_Prueba (name):
-        print ('tiempo  %s' % name)
+        print (f'tiempo {name}')
  
     #----------------------------------------------------
     #   prueba
@@ -97,5 +97,5 @@ if __name__ == "__main__":
     while 1:
         time.sleep(10)       #  Se libera el procesdador un tiempo
         print("-> 10 seg")
-        #tiempo.stop_timer()  #  Al termiaar el tiempo se para  eo ciclo de recurrencia
+#        tiempo.destroy_timer()  #  Al termiaar el tiempo se para  eo ciclo de recurrencia
 

@@ -1,6 +1,6 @@
 import pygame as pg
 from libs.libs_FSM.Classic_FSM import FSM
-from libs.utils.draw_text import Text
+from libs.utils.class_draw_utils import Text
 
 # -------------------------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ class Luz(FSM):
 
     # -------------------------------------------------------------------------------------------
 
-    def __init__(self, screen, state_table = None, event_id_dict= None):
+    def __init__(self, screen, fsm_data_dict):
         """
 
         :param screen:
@@ -72,10 +72,7 @@ class Luz(FSM):
         # ===================================================================================
 
 
-        if state_table:
-            super().__init__('S0', state_table, event_id_dict)
-        else:
-            super().__init__('S0',  event_id_dict = event_id_dict)
+        super().__init__(fsm_data_dict)
 
         self.screen =       screen
 
@@ -122,7 +119,8 @@ class Luz(FSM):
         for key, value in out_event_dict.items():
             self.sw_luz = value
         self.sw_luz = out_event_dict['luz']
-        # ----------------------------------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------------------------------
 
     def simulation_step(self):
         """
@@ -137,8 +135,8 @@ class Luz(FSM):
         in_event_dict['sw_p1'] = int(self.sw_P1)
         in_event_dict['sw_p2'] = int(self.sw_P2)
 
-        self.event_dict = self.step(self.gets_coded_events(in_event_dict))
-        self.set_action(self.event_dict['outputs'])
+        self.out_event_dict = self.step(self.gets_coded_events(in_event_dict))
+        self.set_action(self.out_event_dict)
 
     # ----------------------------------------------------------------------------------------------
     #   D I B U J O S

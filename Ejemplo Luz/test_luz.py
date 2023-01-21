@@ -80,15 +80,25 @@ state_table = {
 #       cada dígito binario la clave <key> de la tabla de estados
 
 key_id_dict = {
-    'inputs': ['sw_p1','sw_p2'],
-    'outputs': ['luz']
+    'inputs': {'sw_p1': False, 'sw_p2': False},
+    'outputs': {'luz': False}
+}
+
+# ---------------------------------------------------------------------------------------------
+# Integración de los datos para la máquina de estados
+
+fsm_data_dict = {
+    'ID': 'Proyecto Luces Pasillo',
+    'init_st':  's0',
+    'rules':    state_table,
+    'events':   key_id_dict
+#    'rules': None,
+#    'events': None
 }
 
 # =============================================================================================
 #       M A I N
 # =============================================================================================
-
-test = True
 
 if __name__ == "__main__":
 
@@ -97,21 +107,18 @@ if __name__ == "__main__":
     pg.display.set_caption('Simula encendido de luz desde dos pulsadores')
     reloj = pg.time.Clock()
 
-    if test:
-        light = Luz(screen,  state_table, key_id_dict)
-        print('\n\tPrueba con tabla de estados externa.')
-
-        light.ID = 'Proyecto Luces Pasillo'
-    else:
-        light = Luz(screen, event_id_dict = key_id_dict)     # crea máquina de estados
-        print('\n\tPrueba con tabla de estados añadida.')
-
-        light.ID = 'Proyecto Luces Pasillo'
+    light = Luz(screen,  fsm_data_dict)
 
 #        action_dict = light.get_action_dict()
 
+    if not fsm_data_dict['events']:
+        light.add_event('sw_p1', 'input')
+        light.add_event('sw_p2', 'input')
+        light.add_event('luz', 'output')
+
         # Tabla de estados.
 
+    if not fsm_data_dict['rules']:
         light.add_state('S0', '00', 'S0', '0')
         light.add_state('S0', '01', 'S1', '0')
         light.add_state('S0', '10', 'S1', '0')
@@ -145,6 +152,7 @@ if __name__ == "__main__":
         state_table = light.get_state_table()
         light.validate_table(state_table)
 
+
     done = False
     while not done:
 
@@ -171,5 +179,5 @@ if __name__ == "__main__":
     # ------------------------------------------
     # Fin de la simulación
 
-    light.print_state_table()   # *** Test ***
+#    light.print_state_table()   # *** Test ***
     pg.quit()

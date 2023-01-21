@@ -172,7 +172,6 @@ if __name__ == "__main__":
     # Main loop
 
     while True:
-      sleep(10)           # sleep until it's time to do something in this loop
-      print("-> 10 seg")
-      #print(">> active threads: ", activeCount(), "\n")  # this might need to be active_count()
-         
+        sleep(10)           # sleep until it's time to do something in this loop
+        print("-> 10 seg")
+        #print(">> active threads: ", activeCount(), "\n")  # this might need to be active_count()

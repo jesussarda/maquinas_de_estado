@@ -2,7 +2,7 @@ import pygame as pg
 import math
 
 from libs.libs_FSM.Classic_FSM import FSM
-from libs.utils.draw_text import Text
+from libs.utils.class_draw_utils import Text
 
 
 # -------------------------------------------------------------------------------------------
@@ -60,7 +60,9 @@ class Motor(FSM):
 
     # -------------------------------------------------------------------------------------------
 
-    def __init__(self, screen, state_table = None, event_id_dict= None):
+#    def __init__(self, screen, state_table = None, event_id_dict= None):
+    def __init__(self, screen,  fsm_data_dict):
+
         """
             Crea la máquina de estados para el problema del control del motor y
             la presentación gráfica de la simulación.
@@ -78,11 +80,7 @@ class Motor(FSM):
 
         # ===================================================================================
 
-        if state_table:
-            super().__init__('inicio', state_table,  event_id_dict)
-        else:
-            super().__init__('inicio',  event_id_dict = event_id_dict)
-
+        super().__init__(fsm_data_dict)
 
         self.screen =       screen
 
@@ -173,8 +171,8 @@ class Motor(FSM):
         in_event_dict['pos_motor'] =  int(self.get_sensor_state())
         in_event_dict['sw_start'] =  int(self.get_buttons_state())
 
-        self.event_dict = self.step(self.gets_coded_events(in_event_dict))
-        self.set_action(self.event_dict['outputs'])
+        self.out_event_dict = self.step(self.gets_coded_events(in_event_dict))
+        self.set_action(self.out_event_dict)
 
 
     # -------------------------------------------------------------------------------------------

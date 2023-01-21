@@ -101,41 +101,52 @@ state_table = {
 #       El orden de los identificadores en las listaa son importantes. Debe corresponder con
 #       cada dígito binario la clave <key> de la tabla de estados
 
-key_id_dict = {
-    'inputs': ['pos_motor','sw_start'],
-    'outputs': ['acttiva_motor', 'luz_alarma']
+event_id_dict = {
+    'inputs': {'pos_motor': False,'sw_start': False},
+    'outputs': {'acttiva_motor': False, 'luz_alarma': False}
 }
+
 
 # =============================================================================================
 #       M A I N
 # =============================================================================================
 
-test = False
 
 if __name__ == "__main__":
+
+    # ---------------------------------------------------------------------------------------------
+    # Integración de los datos para la máquina de estados
+
+    test = False
+    if test:
+        fsm_data_dict = {
+            'ID': 'Proyecto Motor',
+            'init_st': 'inicio',
+            'rules': state_table,  # Si se quiere crear a partir del método <add_state> se pone None
+            'events': event_id_dict  # Si se quiere crear a parti del método <add_event> e pone None
+        }
+    else:
+        fsm_data_dict = {
+            'ID': 'Proyecto Motor',
+            'init_st': 'inicio',
+            'rules': None,  # Si se quiere crear a partir del método <add_state> se pone None
+            'events': None  # Si se quiere crear a parti del método <add_event> e pone None
+        }
 
     pg.init()
     screen = pg.display.set_mode((500, 400))
     pg.display.set_caption('Simula Arranque de Máquina')
     reloj = pg.time.Clock()
 
-    if test:
-        motor = Motor(screen, state_table, key_id_dict)
-        print('\n\tPrueba con tabla de estados externa.')
+    motor = Motor(screen, fsm_data_dict)
 
-        motor.ID = 'Proyecto Motor'
-    else:
-        motor = Motor(screen, event_id_dict = key_id_dict)
-        print('\n\tPrueba con tabla de estados añadida.')
+    # Crear tabla de estados y/o diccionario de eventos.
+    #   DESVENTAJA: a medida que se van creando los estados, se van validando uno a uno. Como
+    #               no se tiene un vision global de la tabla, no es posible verificar la consistencia:
+    #               que todas los estados siguientes de transición correspondan con los estados, por lo que
+    #               hay que hacer una validación expresa al final.
 
-        motor.ID = 'Proyecto Motor'
-
-        # Tabla de estados.
-        #   DESVENTAJA: a medida que se an creando los estados, se van validando uno a uno. Como
-        #               no se tiene un vision global de la tabla, no es posible verificar la consistencia:
-        #               que todas los estados siguentes de transición correspondan con los estados, por lo que
-        #               hay que hacer una validacion expresa al final.
-
+    if not fsm_data_dict['rules']:
         motor.add_state('iNicio', '00', 'faLLa', '10')  # Prende el motor para re posicionar
         motor.add_state('inicio', '01', 'falla', '10')  # Prende el motor para re posicionar
         motor.add_state('inicio', '10', 'inicio', '00')  # Apaga el motor para para o mantener parado
@@ -174,6 +185,15 @@ if __name__ == "__main__":
         state_table = motor.get_state_table()
         motor.validate_table(state_table)
 
+    if not fsm_data_dict['events']:
+        motor.add_event('pos_motor','input')
+        motor.add_event('sw_start','input')
+        motor.add_event('acttiva_motor','output')
+        motor.add_event('luz_alarma','output')
+
+#        event_dict = motor.get_event_dict()                 # no es necesario
+#        event_dict = motor.validate_event_dict(event_dict)  # no es necesario
+
     done = False
     while not done:
 
@@ -199,8 +219,8 @@ if __name__ == "__main__":
         reloj.tick(10)
 
 
-    motor.print_state_table()   # *** Test ***
-    motor.print_event_dict()    # *** Test ***
-    print(motor.get_inputs_event_dict())
-    print(motor.get_outputs_event_dict())
+#    motor.print_state_table()   # *** Test ***
+#    motor.print_event_dict()    # *** Test ***
+#    print(motor.get_inputs_event_dict())
+#    print(motor.get_outputs_event_dict())
     pg.quit()

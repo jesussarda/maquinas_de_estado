@@ -7,14 +7,14 @@ import time
 
 # ----------------------------------------------------------------
 
-def intervalo():
-	print("llega 5 seg")
+def funcion(dato):
+	print("llega 5 seg dato",dato)
 
 # ----------------------------------------------------------------
 
 if __name__ == '__main__':
 
-	timer= Timer(5.0, intervalo)
+	timer= Timer(15.0, funcion,('prueba',) )
 	timer.start()
 
 	print("entra")
