@@ -1,11 +1,11 @@
 from libs.libs_FSM.class_System_FSM import SystemFSM
 
-state_table_fsm_1 = {'estado': {}}
-key_id_dict_fsm_1 = {'inputs': {}}
+state_table_fsm_1 = {'estados': {}}
+key_id_dict_fsm_1 = {'inputs': {}, 'outputs':{}}
 
 
-state_table_fsm_2 = {'estado': {}}
-key_id_dict_fsm_2 = {'inputs': {}}
+state_table_fsm_2 = {'estados': {}}
+key_id_dict_fsm_2 = {'inputs': {}, 'outputs':{}}
 
 system_dict = {
     'fsm_1': {

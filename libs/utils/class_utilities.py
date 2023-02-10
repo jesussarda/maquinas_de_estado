@@ -24,7 +24,7 @@ class Counter():
 
     # --------------------------------------------------------------
 
-    def set_counter(self, count_limit= 1, up= True):
+    def set_counter(self, count_limit= 1, up= True, reinit= False):
         """
             Inicia las condiciones de operación del contador
         :param count_limit: Número de pasos de conteo
@@ -32,6 +32,7 @@ class Counter():
         :return:
         """
 
+        self._reinit = reinit
         if count_limit <= 0:
             count_limit = 1
             print(f'Limite no puede ser menor a uno')
@@ -44,6 +45,7 @@ class Counter():
             self._count = count_limit - 1
         self._stop = False
         self._up = up
+        self._dir = up
 
     # --------------------------------------------------------------
 
@@ -60,28 +62,35 @@ class Counter():
 
     # --------------------------------------------------------------
 
-    def step(self, *args, **kwargs):
+    def step(self, dir, *args, **kwargs):
         """
             Un paso de conteo (creciente o decreciente). Si llega al limite
             se ejecuta la función de callback (si la hay)
-        :param args:    Argumentos para la función callback (opcional)
-        :param kwargs:
-        :return:    Resultado de la funcion (opcional)
+
+        :param dir:     Dirección del conteo. true creciente, False decreciente
+        :param args:    Argumentos para la función callback (si existe)
+        :param kwargs:  Argumento con clave para la función callback  (si existe)
+        :return:        Respuesta de la función (si existe)
         """
         info= None
 
+#        if not args:
+#            args = ('',)
+
+        self._dir= dir
         if self._stop:
             self._stop = False
 
         # ---------------------------------------------------
         #  incremental
 
-        if self._up:
+        if self._dir:
             if self._count >= self._limit:
                 if self._function:
                     info = self._function(*args, **kwargs)
                 self._stop= True
-                self._count = 0
+                if self._reinit:
+                    self._count = 0
             else:
                 self._count += 1
 
@@ -93,7 +102,8 @@ class Counter():
                 if self._function:
                     info = self._function(*args, **kwargs)
                 self._stop= True
-                self._count = self._limit
+                if self._reinit:
+                    self._count = self._limit
             else:
                 self._count -= 1
 
@@ -129,7 +139,68 @@ class Counter():
         :return:    Diccionario con el id de la instancia y el estado
                     de finalización del conteo
         """
-        return {self.id_name: self.stop}
+        return {self.id_name: self._stop}
+
+    # ----------------------------------------------------------------
+
+    def set_scale_limits(self, liminf, limsup):
+        self._liminf = liminf
+        self._limsup = limsup
+
+    # ----------------------------------------------------------------
+
+    def convert_count_to_scale_value(self, liminf=None, limsup=None):
+        """
+            Convierte valores del contador a valores reales, entre una escala
+            real entre un limite inferior y uno superior. Pueden ser valores
+            negativos o positivos.
+
+            liminf              value             limsup
+              |-------------------|------------------|
+              0                self.Count        self._limit
+
+             value = (limsup - liminf)*self._count/self._limit + liminf
+
+        :param liminf:  Valor inferior de la escala real. Puede ser cero o negativo
+        :param limsup:  Valor superior de la escala real.
+        :return:    Valor de la escala correspondiente a la cuenta.
+
+        """
+
+        if liminf:
+            self._liminf = liminf
+        if limsup:
+            self._limsup = limsup
+
+        return (self._limsup -self._liminf)*self._count/self._limit + self._liminf
+
+    # ----------------------------------------------------------------
+
+    def convert_scale_value_to_count(self, value, liminf= None, limsup= None):
+        """
+            Convierte valores del contador a valores reales, entre una escala
+            real entre un limite inferior y uno superior. Pueden ser valores
+            negativos o positivos.
+
+            liminf              value             limsup
+              |-------------------|------------------|
+              0                self.Count        self._limit
+
+             self._count = (value - liminf)/(limsup - liminf)*self._limit
+
+        :param value:   Valor entre a convertir en una cuenta
+        :param liminf:  Valor inferior de la escala real. Puede ser cero o negativo
+        :param limsup:  Valor superior de la escala real.
+        :return:
+        """
+
+        if liminf:
+            self._liminf = liminf
+        if limsup:
+            self._limsup = limsup
+
+        self._count = int((value - self._liminf)/(self._limsup - self._liminf)*self._limit)
+        return self._count
 
 
 # ===============================================================================================

@@ -86,3 +86,33 @@ class SystemFSM():
                 f'Diccionario de configuración del sistema está vacío')
 
         return fsm_def_data
+
+# ----------------------------------------------------------------------------------------------
+
+    def run_system(self):
+
+        for fsm in self.fsm_list:
+            event_dict = fsm.get_event_dict()
+            in_event_dict = event_dict['ínputs']
+
+            in_event_dict['pos_motor'] = int(self.get_sensor_state())
+            in_event_dict['sw_start'] = int(self.get_buttons_state())
+
+            output_event_dict = fsm.step(fsm.gets_coded_events(in_event_dict))
+            fsm.update_action(output_event_dict)
+
+# ----------------------------------------------------------------------------------------------
+
+    def set_action(self, out_event_dict):
+        pass
+
+# ----------------------------------------------------------------------------------------------
+
+    def get_sensor_state(self):
+        return True
+
+# ----------------------------------------------------------------------------------------------
+
+    def get_buttons_state(self):
+        return True
+
