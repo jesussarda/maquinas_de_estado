@@ -52,8 +52,8 @@ BG_COLOR = (64,128,128)
 
 state_table = {
     'iNicio':  [
-        {'key': '00', 'next_st': 'falla',   'action': '10' },
-        {'key': '01', 'next_st': 'falla',   'action': '10' },
+        {'key': '00', 'next_st': 'falla',   'action': '11' },
+        {'key': '01', 'next_st': 'falla',   'action': '11' },
         {'key': '10', 'next_st': 'inicio',  'action': '00' },
         {'key': '11', 'next_st': 'ciclo_1a','action': '10' }],
 
@@ -64,7 +64,7 @@ state_table = {
         {'key': '11', 'next_st': 'CICLO_1a', 'action': '10'}],
 
     'ciclo_1b': [
-        {'key': '00', 'next_st': 'falla',    'action': '11'},
+        {'key': '00', 'next_st': 'ciclo_1b', 'action': '10'},
         {'key': '01', 'next_st': 'ciclo_1b', 'action': '10'},
         {'key': '10', 'next_st': 'ciclo_2a', 'action': '10'},
         {'key': '11', 'next_st': 'ciclo_2a', 'action': '10'}],
@@ -78,7 +78,7 @@ state_table = {
     'ciclo_2b': [
         {'key': '00', 'next_st': 'Ciclo_2b','action': '10'},
         {'key': '01', 'next_st': 'ciclo_2b','action': '10'},
-        {'key': '10', 'next_st': 'inicio',  'action': '00'},
+        {'key': '10', 'next_st': 'espera',  'action': '00'},
         {'key': '11', 'next_st': 'espera',  'action': '00'}],
 
     'espera': [
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------------------------------------
     # Integración de los datos para la máquina de estados
 
-    test = False
+    test = True
     if test:
         fsm_data_dict = {
             'ID': 'Proyecto Motor',
@@ -147,17 +147,17 @@ if __name__ == "__main__":
     #               hay que hacer una validación expresa al final.
 
     if not fsm_data_dict['rules']:
-        motor.add_state('iNicio', '00', 'faLLa', '10')  # Prende el motor para re posicionar
-        motor.add_state('inicio', '01', 'falla', '10')  # Prende el motor para re posicionar
-        motor.add_state('inicio', '10', 'inicio', '00')  # Apaga el motor para para o mantener parado
-        motor.add_state('inicio', '11', 'ciclo_1a', '10')  # Prende el motor para primer giro
+        motor.add_state('iNicio',   '00', 'faLLa',    '11')  # Prende el motor para re posicionar y prende luz alarma
+        motor.add_state('inicio',   '01', 'falla',    '11')  # Prende el motor para re posicionar y prende luz alarma
+        motor.add_state('inicio',   '10', 'inicio',   '00')  # Apaga el motor para para o mantener parado
+        motor.add_state('inicio',   '11', 'ciclo_1a', '10')  # Prende el motor para primer giro
 
         motor.add_state('ciclo_1a', '00', 'ciclo_1b', '10')  # Mantiene el motor prendido para primer giro
         motor.add_state('ciclo_1a', '01', 'ciclo_1b', '10')  # Mantiene el motor prendido para primer giro
         motor.add_state('ciclo_1a', '10', 'ciclo_1a', '10')  # Mantiene el motor prendido hasta que sensor desactive
         motor.add_state('ciclo_1a', '11', 'ciclo_1a', '10')  # Mantiene el motor prendido hasta que sensor desactive
 
-        motor.add_state('ciclo_1b', '00', 'falla',    '11')  # Mantiene el motor prendido durante primer giro
+        motor.add_state('ciclo_1b', '00', 'ciclo_1b', '10')  # Mantiene el motor prendido durante primer giro
         motor.add_state('ciclo_1b', '01', 'ciclo_1b', '10')  # Mantiene el motor prendido durante primer giro
         motor.add_state('ciclo_1b', '10', 'ciclo_2a', '10')  # Mantiene el motor prendido para segundo giro
         motor.add_state('ciclo_1b', '11', 'ciclo_2a', '10')  # Mantiene el motor prendido para segundo giro
@@ -169,18 +169,18 @@ if __name__ == "__main__":
 
         motor.add_state('ciclo_2b', '00', 'ciclo_2b', '10')  # Mantiene el motor prendido hasta que sensor active
         motor.add_state('ciclo_2b', '01', 'ciclo_2b', '10')  # Mantiene el motor prendido hasta que sensor active
-        motor.add_state('ciclo_2b', '10', 'inicio', '00')  # Apaga el motor para para
-        motor.add_state('ciclo_2b', '11', 'espera', '00')  # Apaga el motor para para
+        motor.add_state('ciclo_2b', '10', 'espera',   '00')  # Apaga el motor para para
+        motor.add_state('ciclo_2b', '11', 'espera',   '00')  # Apaga el motor para para
 
-        motor.add_state('espera', '00', 'falla',  '11')  # Prende el motor
-        motor.add_state('espera', '01', 'falla',  '11')  # Prende el motor
-        motor.add_state('espera', '10', 'inicio', '00')  # Apaga el motor
-        motor.add_state('espera', '11', 'espera', '00')  # Apaga el motor
+        motor.add_state('espera',   '00', 'falla',    '11')  # Prende el motor y prende luz de alarma
+        motor.add_state('espera',   '01', 'falla',    '11')  # Prende el motor y prende luz de alarma
+        motor.add_state('espera',   '10', 'inicio',   '00')  # Apaga el motor
+        motor.add_state('espera',   '11', 'espera',   '00')  # Apaga el motor
 
-        motor.add_state('falla', '00', 'falla',  '11')  # Prende el motor
-        motor.add_state('falla', '01', 'falla',  '11')  # Prende el motor
-        motor.add_state('falla', '10', 'inicio', '00')  # Apaga el motor
-        motor.add_state('falla', '11', 'inicio', '00')  # Apaga el motor
+        motor.add_state('falla',    '00', 'falla',    '11')  # Prende el motor y prende luz de alarma
+        motor.add_state('falla',    '01', 'falla',    '11')  # Prende el motor y prende luz de alarma
+        motor.add_state('falla',    '10', 'inicio',   '00')  # Apaga el motor
+        motor.add_state('falla',    '11', 'inicio',   '00')  # Apaga el motor
 
         state_table = motor.get_state_table()
         motor.validate_table(state_table)
