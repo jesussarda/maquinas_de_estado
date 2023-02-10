@@ -1,5 +1,6 @@
 import threading
 import time
+import logging
 
 # ===============================================================================================
 #      Counter
@@ -217,6 +218,16 @@ class EndMsg():
             presenta un mensaje con el origen del error y termina la ejecución.
         """
         msg = 'None'
+        logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.DEBUG)
+
+    # -------------------------------------------------------------------------------------------
+
+    def __del__(self):
+        """
+            destructor
+        :return:
+        """
+        logging.shutdown()
 
     # -------------------------------------------------------------------------------------------
 
@@ -227,7 +238,8 @@ class EndMsg():
         :param msg:
         :return:
         """
-        print(f'\n\t{msg}.')
+#        print(f'\n\t{msg}.')
+        logging.info(msg)
 
     # -------------------------------------------------------------------------------------------
 
@@ -241,7 +253,8 @@ class EndMsg():
         :return:
         """
 
-        print(f'\n\tERROR: <{method_name}> {msg}.')
+#        print(f'\n\tERROR: <{method_name}> {msg}.')
+        logging.error(f'<{method_name}> {msg}.')
         if end:
             exit()
 

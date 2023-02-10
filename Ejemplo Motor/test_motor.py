@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------------------------------------
     # Integración de los datos para la máquina de estados
 
-    test = True
+    test = False
     if test:
         fsm_data_dict = {
             'ID': 'Proyecto Motor',
