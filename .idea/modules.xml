@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Maquinas de estado.iml" filepath="$PROJECT_DIR$/.idea/Maquinas de estado.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/maquinas_de_estado.iml" filepath="$PROJECT_DIR$/.idea/maquinas_de_estado.iml" />
     </modules>
   </component>
 </project>

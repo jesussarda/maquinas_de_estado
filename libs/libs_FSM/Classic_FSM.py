@@ -1,5 +1,7 @@
-from libs.utils.class_utilities import  EndMsg
+from libs.utils.class_utilities import  EndMsg, replace_at
 from time import sleep
+import re
+from copy import copy
 
 """
     MÁQUINA DE ESTADO FINITO (Finite State Machine).
@@ -77,13 +79,15 @@ from time import sleep
 
 class FSM():
 
-    ID ='FSM'
+    ID ='FSM'   # Finite State Machine
                                                      
     # -------------------------------------------------------------------------------------------
 
     def __init__(self, fsm_config_dict = None):
 
         """
+
+
            Establece las condiciones iniciales de la Máquina de Estado.
 
         :param inicial_state:   Estado inicial para la secuencia de transiciones de estados.
@@ -108,13 +112,44 @@ class FSM():
 
             if state_table:
                 self.state_table = self.validate_table(state_table)
+                self.state_table = self.check_dont_care_keys(self.state_table)
             else:
                 self.state_table = {}                       # tabla de estados vacía.
                                                         # Se debe crear usando <add_state>
             self.inicial_state =    inicial_state.lower()   # estado de comienzo
             self.actual_state =     self.inicial_state      # estado actual (varía según la tabla de estados
         else:
-            self.msg.put_error_msg('__init__', 'No se ha introducido el diccionario de configuración de la máquina')
+            self.msg.error_msg('__init__', 'No se ha introducido el diccionario de configuración de la máquina')
+
+    # -------------------------------------------------------------------------------------------
+
+    def check_dont_care_keys(self, state_table):
+        """
+            Verifica si  en la definición de eventos existe la condición 'dont care' (simbilo 'x').
+            si existe se crea una nueva tabla de estados con los identificadores de eventos expandidos
+            (cada dont care implica dos estados 0 y 1. dependiendo de la posicion y la cantidad de 'x'
+            hallada los identificadores de evento se multiplican binariamente.
+
+        :param state_table:
+        :return:
+        """
+        if state_table:
+            new_state_table = {}
+            for state_id in state_table:
+                new_state_table[state_id] = []
+                for idx, key_item in enumerate(state_table[state_id]):
+                    new_key_lst = self.split_dont_care_event(key_item['key'])   # crea lista de nuevos códigos de ventos que substituyen a los dont care
+                    for new_key in new_key_lst:                     # crea nuevos eventos con el desglose de dont care
+                        event_item = {
+                            'key': new_key,
+                            'next_st': key_item['next_st'].lower(),
+                            'action': key_item['action'].lower()
+                        }
+                        new_state_table[state_id].append(event_item)    # los añade a la tabla de estados, para estado actual
+        else:
+            self.msg.error_msg('check_dont_care_keys', 'No se ha introducido el diseño de la tabla de estados')
+
+        return new_state_table
 
     # -------------------------------------------------------------------------------------------
 
@@ -128,16 +163,16 @@ class FSM():
         if config_dict:
             for key in key_names:
                 if key not in config_dict.keys():
-                    self.msg.put_error_msg('validate_config_dict', f'La clave <{key}> del diccionario no es correcta')
+                    self.msg.error_msg('validate_config_dict', f'La clave <{key}> del diccionario no es correcta')
                 else:
                     if not config_dict['init_st']:
-                        self.msg.put_error_msg('validate_config_dict',
+                        self.msg.error_msg('validate_config_dict',
                             f'Identificador del estado inicial <{config_dict["init_st"]}> en clave <init_st> del diccionario de configuración no existe. Es obligatorio',
                             exit = False)
-                        self.msg.put_error_msg('validate_config_dict',f'{config_dict}')
+                        self.msg.error_msg('validate_config_dict',f'{config_dict}')
 
         else:
-            self.msg.put_error_msg('validate_config_dict',
+            self.msg.error_msg('validate_config_dict',
                 'El diccionario de configuración de la máquina de estado no fue creado')
 
         return config_dict
@@ -152,22 +187,22 @@ class FSM():
             if input_event_dict:
                 for input_id in input_event_dict.keys():
                     if not isinstance(input_id, str):
-                        self.msg.put_error_msg('validate_event_dict',
+                        self.msg.error_msg('validate_event_dict',
                         f'El identificador de evento de entrada <{input_id}> debe ser alfanumérico')
             else:
-                self.msg.put_error_msg('validate_event_dict',
+                self.msg.error_msg('validate_event_dict',
                     'La lista de identificadores de eventos de entrada está vacía')
 
             output_event_list = event_id_dict['outputs']
             if output_event_list:
                 for output_id in output_event_list.keys():
                     if not isinstance(output_id, str):
-                        self.msg.put_error_msg('validate_event_dict',
+                        self.msg.error_msg('validate_event_dict',
                             f'El identificador de evento de salida <{output_id}> debe ser alfanumérico')
             else:
-                self.msg.put_error_msg('validate_event_dict', 'La lista de id de eventos de salida está vacía')
+                self.msg.error_msg('validate_event_dict', 'La lista de id de eventos de salida está vacía')
         else:
-            self.msg.put_error_msg('validate_event_dict', 'El diccionario de id de eventos está vacío')
+            self.msg.error_msg('validate_event_dict', 'El diccionario de id de eventos está vacío')
 
         return event_id_dict
 
@@ -184,26 +219,34 @@ class FSM():
 
         if state_table:                         # si no está vacio
 
-            state_table = {key.lower(): value for key, value in state_table.items()}    # pone los id de estado en minusculas
+            state_table = {key.lower(): value for key, value in state_table.items()}    # pone los id de estado en minúsculas
             state_list = state_table.keys()
             for num, state in enumerate(state_list):
                 event_list = state_table[state]
                 if event_list:
                      for idx, event_dict  in enumerate(event_list):
-                        if isinstance(event_dict['key'], str) and event_dict['key'].isnumeric():
-                            value_list = list(event_dict['key'])
-                            for value in value_list:
-                                if int(value) > 1:
-                                    self.msg.put_error_msg('validate_table',
-                                        f'El dígito <{value}> del identificador de evento <{event_dict["key"]}> de La condición <{idx+1}> del estado <{state}> debe ser binario')
-                        else:
-                            self.msg.put_error_msg('validate_table',
-                                f'El identificador de evento <{event_dict["key"]}> de la condición <{idx+1}> del estado <{state}> no es un string o no es numérico')
 
-                        # -----------------------------------------------------------------------------------
+                        # ------------------------------------------------------
+                        event_id = event_dict['key']
+                        if not isinstance(event_id, str):
+                            self.msg.error_msg('validate_table',
+                                f'El identificador en condición o evento <{event_id}> del estado <{state}> debe ser alfanumérico')
+
+                        else:
+                            if not event_id.isnumeric():
+                                if not self.valid_chars_in_key(event_id.lower()):
+                                    self.msg.error_msg('validate_table',
+                                        f'El identificador de condición o evento <{event_id}> del estado <{state}> no debe contener caracteres distintos de 0, 1, o x')
+                                else:
+                                    digit_lst = list(event_id)
+                                    for digit in digit_lst:
+                                        if digit.lower() != 'x':
+                                            if int(digit) >= 2:
+                                                self.msg.error_msg('validate_table',
+                                                    f'El digito <{digit}> del identificador en condición o evento <{event_id}> del estado <{state}> debe ser binario')
 
                         if  event_dict['next_st'].lower() not in state_list:
-                            self.msg.put_error_msg('validate_table',
+                            self.msg.error_msg('validate_table',
                                 f'El identificador de estado de transición <{event_dict["next_st"]}> no corresponde con ningún estado de la tabla')
                         else:
                             event_dict['next_st'] = event_dict['next_st'].lower()
@@ -215,16 +258,17 @@ class FSM():
                                 value_list = list(event_dict['action'])
                                 for value in value_list:
                                     if int(value) > 1:
-                                        self.msg.put_error_msg('validate_table',
+                                        self.msg.error_msg('validate_table',
                                             f'El dígito <{value}> del identificador de acción <{event_dict["action"]}> de La condición <{idx+1}> del estado <{state}> debe ser binario')
                             else:
-                                self.msg.put_error_msg('validate_table',
+                                self.msg.error_msg('validate_table',
                                     f'El identificador de acción <{event_dict["action"]}> de la condición <{idx+1}> del estado <{state}> no es numérico')
 
+                        # ------------------------------------------------------------------------------------
                 else:
-                    self.msg.put_error_msg('validate_table', f'El estado <{state}> no contiene condiciones o eventos')
+                    self.msg.error_msg('validate_table', f'El estado <{state}> no contiene condiciones o eventos')
         else:
-            self.msg.put_error_msg('validate_table', f'El diccionario de estados no existe')
+            self.msg.error_msg('validate_table', f'El diccionario de estados no existe')
 
         return state_table
 
@@ -261,7 +305,7 @@ class FSM():
                     break
             self.actual_state = self.event_key['next_st']
         else:
-            self.msg.put_error_msg('step',
+            self.msg.error_msg('step',
                 ' La tabla de transición de estados no existe. Debe crearla antes.')
 
         return self.event_dict['outputs']
@@ -281,11 +325,63 @@ class FSM():
                 temp = action_key[idx]
                 self.event_dict['outputs'][key] = bool(int(action_key[idx]))
         else:
-            self.msg.put_error_msg('update_action',
+            self.msg.error_msg('update_action',
                 f'El identificador de acción no existe o no es alfanumérico.')
             exit()
 
         return self.event_dict
+
+    # -------------------------------------------------------------------------------------------
+
+    def valid_chars_in_key(self, event_key):
+        """
+            Valida el los caracteres del identificador de eventos. Deben ser solo de tres tipos:
+            0, 1 y x. Cualquier otro caracter no es válido.
+        :param event_key:
+        :return:
+        """
+        if re.search('[^10x]+', event_key):     # Busca por caracteres extraños diferentes de 0,1,x
+            return False                        # Encontró al menos uno distinto
+        else:
+            return True                         # està en regla
+
+    # -------------------------------------------------------------------------------------------
+
+    def _split_item(self, event_lst):
+        """
+        Crea una lista de identificadores de eventos a partir de laa informaciòn
+        de 'dont care' o letra 'x', en los items de la lista <event_lst>
+        :param tmp_lst:
+        :return:
+        """
+
+        group_lst = []
+        for item in event_lst:
+            idx = item.rfind('x')
+            new_item = item
+            group_lst.append(replace_at(new_item, idx, '0'))
+            new_item = item
+            group_lst.append(replace_at(new_item, idx, '1'))
+        return group_lst
+
+    # -------------------------------------------------------------------------------------------
+
+    def split_dont_care_event(self,event):
+        """
+            Procesa los marcadores 'x' ('dont care') y los convierte en
+            nuevos identificadores de evento con sus equivalentes en 0 y 1
+            respetando la posición. Se creará un lista de identificadores
+            de evento equivalentes.
+
+        :return:
+        """
+        new_event = event.lower()       # IMPORTANTE: asegura que x siempre sea minuscula
+        num_x = new_event.count('x')
+
+        event_list = [new_event]
+        for i in range(num_x):
+            event_list = self._split_item(event_list)
+        return event_list
 
     # -------------------------------------------------------------------------------------------
 
@@ -312,67 +408,80 @@ class FSM():
 
 
         if not isinstance(state, str):
-            self.msg.put_error_msg('add_state', f'El identificador de estado <{state}> debe ser alfanumérico')
+            self.msg.error_msg('add_state', f'El identificador de estado <{state}> debe ser alfanumérico')
         else:
             state = state.lower()
 
         # El id de condición debe ser un un string. Otro tipo no es válido.
 
         if not isinstance(key, str):
-            self.msg.put_error_msg('add_state',
+            self.msg.error_msg('add_state',
             f'El identificador en condición o evento <{key}> del estado <{state}> debe ser alfanumérico')
         else:
+            # -------------------------------------------------------------
             if not key.isnumeric():
-                self.msg.put_error_msg('add_state',
-                    f'El identificador en condición o evento <{key}> del estado <{state}> debe ser un nomero binario')
+                if not self.valid_chars_in_key(key.lower()):
+                    self.msg.error_msg('add_state',
+                        f'El identificador de condición o evento <{key}> del estado <{state}> no debe contener caracteres distintos de 0, 1, o x')
+
+                # self.msg.error_msg('add_state',
+                #     f'El identificador de condición o evento <{key}> del estado <{state}> debe ser un número binario o contener x')
             else:
                 digit_lst = list(key)
                 for digit in digit_lst:
-                    if int(digit) > 2:
-                        self.msg.put_error_msg('add_state',
-                             f'El digito <{digit}> del identificador en condición o evento <{key}> del estado <{state}> debe ser  binario')
+                    if digit != 'x':
+                        if int(digit) >= 2:
+                            self.msg.error_msg('add_state',
+                                f'El digito <{digit}> del identificador en condición o evento <{key}> del estado <{state}> debe ser  binario')
 
         # El id de condición debe ser un un string. Otro tipo no es .
 
         if not isinstance(next_state, str):
-            self.msg.put_error_msg('add_state',
+            self.msg.error_msg('add_state',
                 f'El identificador de estado siguente <{next_state}> para la condicion <{key}> del estado <{state}> debe ser alfanumérico.')
 
         # El id de acción debe ser un un string. Otro tipo no es .
 
         if not isinstance(action, str):
             if action is not None:
-                self.msg.put_error_msg('add_state',
+                self.msg.error_msg('add_state',
                 f'El identificador de acción <{action}> para la condición <{key}> del estado <{state}> debe ser alfanumérico.')
         else:
             if not action.isnumeric():
-                self.msg.put_error_msg('add_state',
+                self.msg.error_msg('add_state',
                     f'El identificador de acción <{action}> del estado <{state}> debe ser un nomero binario.')
             else:
                 digit_lst = list(action)
                 for digit in digit_lst:
                     if int(digit) > 2:
-                        self.msg.put_error_msg('add_state',
+                        self.msg.error_msg('add_state',
                             f'El dígito <{digit}> del identificador de acción <{action}> del estado <{state}> debe ser  binario.')
 
         # -------------------------------------------------------------------------------------------------------
         # Si el id de estado ya ha sido creado y está en el diccionario de estados, se crea y añade el
         # diccionario de esa nueva condición a la lista de condiciones de ese estado
 
-        event_item = {
-            'key': key,
-            'next_st': next_state.lower(),
-            'action': action
-        }
 
-        if state in self.state_table.keys():
-            self.state_table[state].append(event_item)
+        key_lst =  self.split_dont_care_event(key)
 
-        # Si el estado es nuevo se crea la nueva clave de identificador de estado, y una nueva lista con
-        # un único item (diccionario) para la presente condición.
+        for key_item in key_lst:
 
-        else:
-            self.state_table[state] = [event_item]
+            event_item = {
+                'key': key_item,
+                'next_st': next_state.lower(),
+                'action': action
+            }
+
+            # si el identificador del estado ya existe, se añade a la lista de ese ese estado
+
+            if state in self.state_table.keys():
+                self.state_table[state].append(event_item)
+
+            # Si el estado es nuevo se crea la nueva clave de identificador de estado, y una nueva lista con
+            # un único item (diccionario) para la presente condición.
+
+            else:
+                self.state_table[state] = [event_item]
 
     # -------------------------------------------------------------------------------------------
 
@@ -385,7 +494,7 @@ class FSM():
         """
 
         if not isinstance(name_event, str):
-            self.msg.put_error_msg('add_event',
+            self.msg.error_msg('add_event',
                 f'El identificador de evento <{name_event}> debe ser alfanumérico')
         else:
             if isinstance(self.event_dict, dict):
@@ -403,7 +512,7 @@ class FSM():
                         self.event_dict['outputs'] = {}
                         self.event_dict['outputs'][name_event.lower()] = False
                 else:
-                    self.msg.put_error_msg('add_event',
+                    self.msg.error_msg('add_event',
                         f'El tipo de evento <{type}> no es válido. Debe ser <inputs> o <outputs>')
 
     # -------------------------------------------------------------------------------------------
@@ -417,7 +526,7 @@ class FSM():
         if self.state_table:
             return self.state_table
         else:
-            self.msg.put_error_msg('get_state_table', 'la tabla de estados no ha sido creada aún')
+            self.msg.error_msg('get_state_table', 'la tabla de estados no ha sido creada aún')
             exit()
 
     # -------------------------------------------------------------------------------------------
@@ -431,7 +540,7 @@ class FSM():
         if self.event_dict:
             return self.event_dict
         else:
-            self.msg.put_error_msg('get_event_dict', 'El diccionario de eventos no ha sido creado aún')
+            self.msg.error_msg('get_event_dict', 'El diccionario de eventos no ha sido creado aún')
 
     # -------------------------------------------------------------------------------------------
 
@@ -444,7 +553,7 @@ class FSM():
         if self.event_dict:
             return self.event_dict['inputs']
         else:
-            self.msg.put_error_msg('get_inputs_event_dict', 'El diccionario de eventos no ha sido creado aún.')
+            self.msg.error_msg('get_inputs_event_dict', 'El diccionario de eventos no ha sido creado aún.')
             exit()
 
     # -------------------------------------------------------------------------------------------
@@ -458,7 +567,7 @@ class FSM():
         if self.event_dict:
             return self.event_dict['outputs']
         else:
-            self.msg.put_error_msg('get_outputs_event_dict', 'El diccionario de eventos no ha sido creado aún')
+            self.msg.error_msg('get_outputs_event_dict', 'El diccionario de eventos no ha sido creado aún')
             exit()
 
     # -------------------------------------------------------------------------------------------
@@ -479,7 +588,7 @@ class FSM():
                     event_dict[key] = False
 
             else:
-                self.msg.put_error_msg('reset_event_dict', f'El tipo <{type}> no es correcto')
+                self.msg.error_msg('reset_event_dict', f'El tipo <{type}> no es correcto')
         else:
             for key in event_dict['inputs'].keys():
                 event_dict[key] = False
@@ -528,7 +637,7 @@ class FSM():
                     print(f'\t{event_dict}')
             print('-'*80)
         else:
-            self.msg.put_error_msg('print_state_table', 'La tabla de estados está vacía')
+            self.msg.error_msg('print_state_table', 'La tabla de estados está vacía')
 
     # -------------------------------------------------------------------------------------------
 
@@ -553,6 +662,6 @@ class FSM():
                     print(f'\t{item}:\t{int(value)}')
             print('-'*80)
         else:
-            self.msg.put_error_msg('print_event_dict', 'El diccionario de eventos np ha sido creado')
+            self.msg.error_msg('print_event_dict', 'El diccionario de eventos np ha sido creado')
 
 

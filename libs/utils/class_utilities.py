@@ -3,6 +3,11 @@ import time
 import logging
 
 # ===============================================================================================
+
+def replace_at(string, idx, char):
+    return string[:idx] + char + string[idx+1:]
+
+# ===============================================================================================
 #      Counter
 # ===============================================================================================
 
@@ -243,7 +248,7 @@ class EndMsg():
 
     # -------------------------------------------------------------------------------------------
 
-    def put_error_msg(self, method_name, msg, end = True):
+    def error_msg(self, method_name, msg, end = True):
         """
             Presenta en terminal un mensaje, con el nombre de de el método o función donde se
             origino el error, y termina la ejecución del script.
@@ -352,3 +357,4 @@ class TimeEvent(threading.Timer):
         :return:
         """
         self.dato = dato
+
